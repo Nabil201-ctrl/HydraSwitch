@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HydraSwitch • Payment Tester</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    
+    :root {
+      --primary: #0F172A;
+    }
+    
+    body {
+      font-family: 'Inter', system_ui, sans-serif;
+    }
+    
+    .font-display {
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-weight: 600;
+    }
+
+    .state-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .timeline-item {
+      position: relative;
+    }
+    
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 28px;
+      bottom: -12px;
+      width: 2px;
+      background: #e2e8f0;
+    }
+    
+    .timeline-item:last-child::before {
+      display: none;
+    }
+
+    .timestamp {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.75rem;
+    }
+
+    .payment-card {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .payment-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    }
+
+    .metric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .section-header {
+      font-size: 0.875rem;
+      letter-spacing: -.025em;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .demo-btn {
+      transition: all .1s ease;
+    }
+
+    .demo-btn:active {
+      transform: scale(0.985);
+    }
+
+    .log-line {
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body class="bg-slate-50">
+  <!-- Top nav -->
+  <nav class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-x-3">
+          <div class="flex items-center gap-x-2">
+            <div class="w-9 h-9 bg-slate-900 rounded-2xl flex items-center justify-center">
+              <i class="fa-solid fa-water text-white text-2xl"></i>
+            </div>
+            <div>
+              <span class="font-display text-2xl font-semibold tracking-tighter text-slate-900">HydraSwitch</span>
+            </div>
+          </div>
+          <div class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wide flex items-center gap-1">
+            <i class="fa-solid fa-check-double text-xs"></i>
+            <span>LIVE</span>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-x-3 text-sm">
+          <div class="flex items-center bg-slate-100 rounded-2xl px-1 py-1 text-xs">
+            <div class="px-3 font-medium text-slate-600">API</div>
+            <div id="api-status" 
+                 class="px-3 py-1 rounded-[14px] bg-emerald-500 text-white font-semibold flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-circle text-[9px]"></i>
+              <span>Connected</span>
+            </div>
+          </div>
+          <button onclick="resetDemoData()" 
+                  class="text-slate-500 hover:text-red-600 flex items-center gap-x-2 text-xs font-medium px-3 py-1.5 rounded-xl hover:bg-red-50 transition-colors">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Reset Demo Data</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Hero -->
+    <div class="mb-8">
+      <div class="flex items-end justify-between">
+        <div>
+          <h1 class="text-4xl font-semibold tracking-tighter text-slate-900">Try the Payment Orchestrator</h1>
+          <p class="mt-2 text-lg text-slate-600 max-w-xl">
+            Create test payments and watch exactly what happens at every step. 
+            No technical knowledge needed.
+          </p>
+        </div>
+        <div class="hidden md:block text-right">
+          <div class="inline-flex items-center gap-2 text-xs bg-white border border-slate-200 rounded-3xl px-4 h-9 shadow-sm">
+            <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+            <span class="font-medium text-slate-600">Idempotency + Precise Timestamps</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick explanation cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div class="bg-white border border-slate-200 rounded-3xl p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-2xl bg-amber-100 flex items-center justify-center">
+            <i class="fa-solid fa-clock text-amber-600"></i>
+          </div>
+          <div class="font-semibold text-slate-800">Time Processed</div>
+        </div>
+        <div class="text-sm text-slate-600 leading-relaxed">
+          Every time a payment moves to <span class="font-semibold text-amber-600">PENDING</span>, 
+          <span class="font-semibold text-emerald-600">COMPLETED</span>, or 
+          <span class="font-semibold text-emerald-600">SUCCESS</span>, 
+          the exact moment is recorded.
+        </div>
+      </div>
+      
+      <div class="bg-white border border-slate-200 rounded-3xl p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-2xl bg-violet-100 flex items-center justify-center">
+            <i class="fa-solid fa-copy text-violet-600"></i>
+          </div>
+          <div class="font-semibold text-slate-800">Idempotency Keys</div>
+        </div>
+        <div class="text-sm text-slate-600 leading-relaxed">
+          Send the same <span class="font-mono text-xs bg-slate-100 px-1.5 py-px rounded">Idempotency-Key</span> twice. 
+          The system returns the original payment — nothing gets processed twice.
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-3xl p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-2xl bg-sky-100 flex items-center justify-center">
+            <i class="fa-solid fa-route text-sky-600"></i>
+          </div>
+          <div class="font-semibold text-slate-800">State Machine</div>
+        </div>
+        <div class="text-sm text-slate-600 leading-relaxed">
+          Payments follow strict rules: <span class="font-medium">INITIATED → PENDING → AUTHORIZED → CAPTURED → SETTLED</span>. 
+          You control the happy path or a decline.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      
+      <!-- CREATE PAYMENT -->
+      <div class="xl:col-span-5 bg-white border border-slate-200 shadow-sm rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="section-header flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i>
+              <span>CREATE A NEW PAYMENT</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">This is what a merchant would send us</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Amount + Currency -->
+          <div class="grid grid-cols-5 gap-3">
+            <div class="col-span-3">
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Amount</label>
+              <div class="relative">
+                <input id="amount" type="number" value="2599" step="1"
+                       class="w-full border border-slate-300 focus:border-slate-400 rounded-2xl px-4 py-3 text-lg font-semibold outline-none">
+                <div class="absolute right-4 top-1/2 -mt-2 text-xs text-slate-400 font-medium">cents</div>
+              </div>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Currency</label>
+              <select id="currency" class="w-full border border-slate-300 focus:border-slate-400 rounded-2xl px-4 py-[15px] text-lg font-semibold outline-none bg-white">
+                <option value="USD">USD — US Dollar</option>
+                <option value="EUR">EUR — Euro</option>
+                <option value="GBP">GBP — British Pound</option>
+                <option value="CAD">CAD — Canadian Dollar</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Description (optional)</label>
+            <input id="description" type="text" value="Premium subscription - Acme Corp" 
+                   class="w-full border border-slate-300 focus:border-slate-400 rounded-2xl px-4 py-3 outline-none">
+          </div>
+
+          <!-- Provider + Email (Paystack needs email) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Provider</label>
+              <select id="provider" onchange="onProviderChange()" 
+                      class="w-full border border-slate-300 focus:border-slate-400 rounded-2xl px-4 py-3 text-sm font-medium outline-none bg-white">
+                <option value="paystack">Paystack (real test mode)</option>
+                <option value="mock">Mock (instant, no external call)</option>
+              </select>
+              <p class="text-[10px] text-emerald-600 mt-0.5 px-1">Paystack will generate a real checkout link</p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Customer Email (required for Paystack)</label>
+              <input id="customer-email" type="email" value="test@hydraswitch.dev" 
+                     class="w-full border border-slate-300 focus:border-slate-400 rounded-2xl px-4 py-3 text-sm outline-none">
+            </div>
+          </div>
+
+          <!-- IDEMPOTENCY KEY - the star of the show -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-semibold text-slate-600">
+                <span>Idempotency Key</span>
+                <span class="text-rose-500">*</span>
+              </label>
+              <div class="flex items-center gap-1 text-xs">
+                <button onclick="generateNewKey()" 
+                        class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center gap-1 font-medium">
+                  <i class="fa-solid fa-sync text-xs"></i>
+                  <span>New key</span>
+                </button>
+                <button onclick="useLastKey()" 
+                        class="px-2.5 py-1 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 flex items-center gap-1 font-medium">
+                  <i class="fa-solid fa-history text-xs"></i>
+                  <span>Use last</span>
+                </button>
+              </div>
+            </div>
+            <input id="idempotency-key" type="text" 
+                   class="font-mono w-full border border-slate-300 focus:border-violet-400 rounded-2xl px-4 py-3 text-sm outline-none bg-slate-50"
+                   placeholder="order-12345-abc">
+            <p class="text-[10px] text-slate-500 mt-1 px-1">
+              This key guarantees the payment is only created <span class="font-semibold">once</span>, even if the user clicks twice.
+            </p>
+          </div>
+
+          <button onclick="createPayment()"
+                  class="demo-btn w-full mt-2 bg-slate-900 hover:bg-black active:bg-slate-950 transition-colors text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-x-3 text-base shadow">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Create Payment Intent</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CURRENT / SELECTED INTENT -->
+      <div class="xl:col-span-7 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 flex flex-col" id="detail-panel">
+        <div class="flex items-center justify-between mb-3">
+          <div class="section-header">CURRENT PAYMENT</div>
+          <div id="detail-id" class="font-mono text-xs text-slate-400"></div>
+        </div>
+
+        <div id="detail-empty" class="flex-1 flex items-center justify-center text-center py-8">
+          <div>
+            <i class="fa-solid fa-receipt text-4xl text-slate-200 mb-3"></i>
+            <div class="text-slate-400 text-sm">Create a payment to see it here</div>
+          </div>
+        </div>
+
+        <div id="detail-content" class="hidden flex-1">
+          <!-- Populated by JS -->
+          <div class="flex items-center gap-x-3 mb-4">
+            <div id="detail-state-badge" class="state-badge text-base px-4 py-1"></div>
+            <div id="detail-provider" class="text-xs px-3 py-1 bg-slate-100 text-slate-600 rounded-2xl font-medium"></div>
+          </div>
+
+          <div class="flex items-baseline gap-2 mb-5">
+            <span id="detail-amount" class="text-4xl font-semibold tabular-nums text-slate-900"></span>
+            <span id="detail-currency" class="font-semibold text-xl text-slate-500"></span>
+          </div>
+
+          <div id="detail-description" class="text-sm text-slate-600 mb-5"></div>
+
+          <!-- TIMELINE - the important part for timestamps -->
+          <div class="mb-1">
+            <div class="text-xs font-semibold text-slate-500 mb-2.5 px-0.5">WHAT HAPPENED &amp; WHEN (exact server time)</div>
+            
+            <div id="timeline" class="space-y-1 text-sm"></div>
+          </div>
+
+          <div class="flex gap-3 pt-5 border-t mt-auto" id="action-buttons">
+            <!-- Dynamically populated by renderDetailActions() in JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- IDEMPOTENCY DEMO -->
+      <div class="xl:col-span-12 bg-gradient-to-br from-violet-50 to-white border border-violet-100 rounded-3xl p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-y-3 mb-4">
+          <div>
+            <div class="flex items-center gap-x-2">
+              <i class="fa-solid fa-copy text-violet-600"></i>
+              <span class="font-semibold text-violet-900">Idempotency Demo (for non-technical users)</span>
+            </div>
+            <div class="text-sm text-violet-700">Prove that sending the exact same request twice is safe.</div>
+          </div>
+          <button onclick="runIdempotencyDemo()"
+                  class="px-5 py-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 transition text-white rounded-2xl text-sm font-semibold flex items-center gap-x-2">
+            <i class="fa-solid fa-magic"></i>
+            <span>Run the Idempotency Test</span>
+          </button>
+        </div>
+        
+        <div id="idempotency-log" class="hidden bg-white border border-violet-200 rounded-2xl p-4 text-xs font-medium">
+          <!-- populated dynamically -->
+        </div>
+      </div>
+
+      <!-- RECENT PAYMENTS TABLE -->
+      <div class="xl:col-span-12">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <div class="section-header flex items-center gap-x-2">
+            <i class="fa-solid fa-list"></i> 
+            <span>RECENT TEST PAYMENTS</span>
+          </div>
+          <button onclick="loadRecentPayments()" 
+                  class="flex items-center gap-x-2 text-xs px-3 h-8 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-700 font-medium">
+            <i class="fa-solid fa-sync fa-sm"></i>
+            <span>Refresh list</span>
+          </button>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-slate-50 text-left text-xs text-slate-500 border-b">
+                <th class="font-normal px-6 py-3 w-40">ID</th>
+                <th class="font-normal px-4 py-3">Amount</th>
+                <th class="font-normal px-4 py-3">State</th>
+                <th class="font-normal px-4 py-3 hidden md:table-cell">pending_at</th>
+                <th class="font-normal px-4 py-3 hidden md:table-cell">success_at / completed_at</th>
+                <th class="font-normal px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recent-table" class="text-sm divide-y divide-slate-100">
+              <!-- rows injected by JS -->
+            </tbody>
+          </table>
+          <div id="recent-empty" class="px-6 py-8 text-center text-slate-400 text-sm hidden">
+            No payments yet. Create one above!
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-2 px-2">Click any row to load it into the detail view on the right.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="max-w-6xl mx-auto px-6 pb-8 text-[10px] text-slate-400">
+    This is a safe demo environment. All data lives only in this browser session + the server’s temporary JSON files.
+  </footer>
+
+  <script>
+    // Tailwind script
+    function initTailwind() {
+      document.documentElement.style.setProperty('--accent', '#0f172a');
+    }
+
+    const API_BASE = window.location.origin;
+    let currentIntent = null;
+    let lastUsedKey = null;
+
+    function formatAmount(amount, currency) {
+      const dollars = (amount / 100).toFixed(2);
+      return new Intl.NumberFormat('en-US', { 
+        style: 'currency', 
+        currency: currency || 'USD' 
+      }).format(dollars);
+    }
+
+    function formatTimestamp(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + 
+             ' · ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    function getStateColor(state) {
+      const colors = {
+        'INITIATED': 'bg-slate-200 text-slate-700',
+        'PENDING': 'bg-amber-100 text-amber-700',
+        'AUTHORIZED': 'bg-blue-100 text-blue-700',
+        'CAPTURED': 'bg-emerald-100 text-emerald-700',
+        'SETTLED': 'bg-emerald-600 text-white',
+        'DECLINED': 'bg-rose-100 text-rose-700',
+        'VOIDED': 'bg-rose-200 text-rose-700',
+        'EXPIRED': 'bg-zinc-200 text-zinc-600'
+      };
+      return colors[state] || 'bg-slate-200 text-slate-700';
+    }
+
+    function getStateIcon(state) {
+      if (['SETTLED', 'CAPTURED'].includes(state)) return '<i class="fa-solid fa-check-circle"></i>';
+      if (state === 'PENDING') return '<i class="fa-solid fa-clock"></i>';
+      if (state === 'DECLINED') return '<i class="fa-solid fa-times-circle"></i>';
+      if (state === 'AUTHORIZED') return '<i class="fa-solid fa-shield-halved"></i>';
+      return '<i class="fa-solid fa-circle"></i>';
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(API_BASE + path, {
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        ...options
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
+      return data;
+    }
+
+    function generateNewKey() {
+      const key = 'demo-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+      document.getElementById('idempotency-key').value = key;
+      return key;
+    }
+
+    function useLastKey() {
+      const input = document.getElementById('idempotency-key');
+      if (lastUsedKey) {
+        input.value = lastUsedKey;
+      } else {
+        alert('No previous key yet. Create a payment first.');
+      }
+    }
+
+    async function createPayment() {
+      const amount = parseInt(document.getElementById('amount').value, 10);
+      const currency = document.getElementById('currency').value;
+      const description = document.getElementById('description').value.trim();
+      let key = document.getElementById('idempotency-key').value.trim();
+
+      if (!key) {
+        key = generateNewKey();
+      }
+
+      try {
+        const provider = document.getElementById('provider').value;
+        const customerEmail = document.getElementById('customer-email').value.trim();
+
+        const payload = { 
+          amount, 
+          currency, 
+          description: description || undefined,
+          provider,
+          customer_email: customerEmail || undefined
+        };
+        
+        const result = await api('/v1/payment-intents', {
+          method: 'POST',
+          headers: { 'Idempotency-Key': key },
+          body: JSON.stringify(payload)
+        });
+
+        lastUsedKey = key;
+        currentIntent = result;
+        
+        // Show nice toast if it was a replay
+        if (result.is_replay) {
+          showToast('Idempotency worked! This was a replay of an earlier request.', 'violet');
+        } else {
+          showToast('Payment created successfully. Notice the pending_at time!', 'emerald');
+        }
+        
+        renderDetail(result);
+        await loadRecentPayments();
+        
+        // Pre-fill the key input with the one we just used (for easy replay testing)
+        document.getElementById('idempotency-key').value = key;
+      } catch (e) {
+        alert('Failed to create payment: ' + e.message);
+      }
+    }
+
+    function onProviderChange() {
+      const provider = document.getElementById('provider').value;
+      const currencySel = document.getElementById('currency');
+      const note = document.querySelector('#provider + p'); // small note under select
+
+      if (provider === 'paystack') {
+        // Paystack works great with NGN (and GHS, ZAR, KES)
+        if (!['NGN', 'GHS', 'ZAR', 'KES'].includes(currencySel.value)) {
+          currencySel.value = 'NGN';
+        }
+        // Update the "cents" label to be more accurate for the currency
+        const centsLabel = document.querySelector('#amount + div');
+        if (centsLabel) centsLabel.textContent = 'kobo / smallest';
+      } else {
+        const centsLabel = document.querySelector('#amount + div');
+        if (centsLabel) centsLabel.textContent = 'cents';
+      }
+    }
+
+    async function processSuccess() {
+      if (!currentIntent) return alert('Create or select a payment first');
+      
+      try {
+        const res = await api(`/v1/payment-intents/${currentIntent.id}/process`, { method: 'POST' });
+        currentIntent = res.intent || res;
+        renderDetail(currentIntent);
+        await loadRecentPayments();
+        showToast('Success path completed! See completed_at and success_at now.', 'emerald');
+      } catch (e) {
+        alert('Process failed: ' + e.message);
+      }
+    }
+
+    async function initializePaystack() {
+      if (!currentIntent) return alert('Select a payment first');
+      try {
+        const res = await api(`/v1/payment-intents/${currentIntent.id}/initialize-paystack`, { method: 'POST' });
+        currentIntent = res.intent || res;
+        renderDetail(currentIntent);
+        await loadRecentPayments();
+        showToast('Paystack checkout link generated! Click the green button to open test checkout.', 'emerald');
+      } catch (e) {
+        alert('Initialize Paystack failed: ' + e.message);
+      }
+    }
+
+    async function verifyPaystack() {
+      if (!currentIntent) return alert('Select a payment first');
+      try {
+        const res = await api(`/v1/payment-intents/${currentIntent.id}/verify-paystack`, { method: 'POST' });
+        currentIntent = res.intent || res;
+        renderDetail(currentIntent);
+        await loadRecentPayments();
+
+        const status = res.verified?.status || 'unknown';
+        if (status === 'success') {
+          showToast('Paystack reported SUCCESS! completed_at and success_at have been recorded.', 'emerald');
+        } else {
+          showToast(`Paystack status: ${status}. Payment moved to declined.`, 'rose');
+        }
+      } catch (e) {
+        alert('Verify Paystack failed: ' + e.message);
+      }
+    }
+
+    async function declinePayment() {
+      if (!currentIntent) return alert('Create or select a payment first');
+      
+      try {
+        const updated = await api(`/v1/payment-intents/${currentIntent.id}/decline`, { method: 'POST' });
+        currentIntent = updated;
+        renderDetail(currentIntent);
+        await loadRecentPayments();
+        showToast('Payment marked as declined. No success timestamps were recorded.', 'rose');
+      } catch (e) {
+        alert('Decline failed: ' + e.message);
+      }
+    }
+
+    async function refreshCurrent() {
+      if (!currentIntent) return;
+      try {
+        const fresh = await api(`/v1/payment-intents/${currentIntent.id}`);
+        currentIntent = fresh;
+        renderDetail(fresh);
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    function renderDetail(intent) {
+      const empty = document.getElementById('detail-empty');
+      const content = document.getElementById('detail-content');
+      
+      empty.classList.add('hidden');
+      content.classList.remove('hidden');
+
+      // Header info
+      document.getElementById('detail-id').textContent = intent.id;
+      
+      const badge = document.getElementById('detail-state-badge');
+      badge.innerHTML = `${getStateIcon(intent.state)} <span class="font-bold">${intent.state}</span>`;
+      badge.className = `state-badge text-sm px-4 py-1.5 ${getStateColor(intent.state)}`;
+
+      document.getElementById('detail-provider').innerHTML = 
+        `<i class="fa-solid fa-building mr-1.5"></i>${intent.active_provider || 'unknown'}`;
+
+      document.getElementById('detail-amount').innerHTML = (intent.amount / 100).toFixed(2);
+      document.getElementById('detail-currency').textContent = intent.currency;
+
+      const descEl = document.getElementById('detail-description');
+      descEl.textContent = intent.description || 'No description provided';
+      descEl.style.display = intent.description ? 'block' : 'none';
+
+      // TIMELINE - this is the educational part
+      renderTimeline(intent);
+
+      // Show Paystack specific info (checkout link etc) when relevant
+      renderPaystackSection(intent);
+
+      // Context-aware action buttons (Paystack vs Mock)
+      renderDetailActions(intent);
+    }
+
+    function renderPaystackSection(intent) {
+      // Remove any previous paystack box
+      const old = document.getElementById('paystack-section');
+      if (old) old.remove();
+
+      if (intent.active_provider !== 'paystack' || !intent.paystack) return;
+
+      const p = intent.paystack;
+      const container = document.getElementById('timeline').parentElement;
+
+      const box = document.createElement('div');
+      box.id = 'paystack-section';
+      box.className = 'mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs';
+
+      let html = `<div class="font-semibold text-emerald-700 mb-1 flex items-center gap-2"><i class="fa-solid fa-globe"></i> Paystack Details</div>`;
+
+      if (p.authorization_url) {
+        html += `
+          <a href="${p.authorization_url}" target="_blank" 
+             class="block mt-1 mb-2 px-3 py-2 bg-white hover:bg-emerald-100 border border-emerald-300 rounded-xl text-emerald-700 font-semibold flex items-center gap-2 text-sm">
+            <i class="fa-solid fa-external-link-alt"></i>
+            <span>Open Paystack Test Checkout</span>
+          </a>
+          <div class="text-[10px] text-emerald-600">Use test card: 4084084084084081 | exp any future | cvv 408 | pin 1111</div>
+        `;
+      }
+
+      if (p.reference) {
+        html += `<div class="mt-1 text-emerald-600">Reference: <span class="font-mono">${p.reference}</span></div>`;
+      }
+      if (p.status && p.status !== 'initialized') {
+        html += `<div class="text-emerald-600">Paystack status: <span class="font-semibold">${p.status}</span></div>`;
+      }
+
+      box.innerHTML = html;
+      container.appendChild(box);
+    }
+
+    function renderDetailActions(intent) {
+      const container = document.getElementById('action-buttons');
+      container.innerHTML = '';
+
+      const isTerminal = ['SETTLED', 'DECLINED', 'VOIDED', 'EXPIRED'].includes(intent.state);
+      const isPaystack = intent.active_provider === 'paystack';
+
+      if (isTerminal) {
+        // Only refresh + info
+        container.innerHTML = `
+          <div class="text-xs px-3 py-2 bg-slate-100 rounded-2xl text-slate-500">This payment is in a terminal state.</div>
+          <button onclick="refreshCurrent()" class="px-4 text-slate-500 hover:text-slate-700 border border-slate-200 hover:bg-slate-50 rounded-2xl text-sm font-medium">
+            <i class="fa-solid fa-sync"></i>
+          </button>
+        `;
+        return;
+      }
+
+      if (isPaystack) {
+        // Paystack flow buttons
+        const hasLink = !!intent.paystack?.authorization_url;
+        const hasRef = !!intent.paystack?.reference;
+
+        let buttons = '';
+
+        if (!hasLink) {
+          buttons += `
+            <button onclick="initializePaystack()" 
+                    class="demo-btn flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-3 rounded-2xl flex items-center justify-center gap-2">
+              <i class="fa-solid fa-globe"></i>
+              <span>Initialize on Paystack</span>
+            </button>`;
+        } else {
+          buttons += `
+            <button onclick="verifyPaystack()" 
+                    class="demo-btn flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-3 rounded-2xl flex items-center justify-center gap-2">
+              <i class="fa-solid fa-check-double"></i>
+              <span>Verify on Paystack (after checkout)</span>
+            </button>`;
+        }
+
+        buttons += `
+          <button onclick="declinePayment()" class="demo-btn flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold py-3 rounded-2xl flex items-center justify-center gap-2">
+            <i class="fa-solid fa-ban"></i>
+            <span>Decline</span>
+          </button>
+          <button onclick="refreshCurrent()" class="px-4 text-slate-500 hover:text-slate-700 border border-slate-200 hover:bg-slate-50 rounded-2xl text-sm font-medium">
+            <i class="fa-solid fa-sync"></i>
+          </button>
+        `;
+
+        container.innerHTML = buttons;
+      } else {
+        // Mock provider - original instant success buttons
+        container.innerHTML = `
+          <button onclick="processSuccess()" 
+                  class="demo-btn flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-3 rounded-2xl flex items-center justify-center gap-2">
+            <i class="fa-solid fa-check-double"></i>
+            <span>Process as SUCCESS (mock)</span>
+          </button>
+          
+          <button onclick="declinePayment()" 
+                  class="demo-btn flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold py-3 rounded-2xl flex items-center justify-center gap-2">
+            <i class="fa-solid fa-ban"></i>
+            <span>Decline (simulate failure)</span>
+          </button>
+          
+          <button onclick="refreshCurrent()" 
+                  class="px-4 text-slate-500 hover:text-slate-700 border border-slate-200 hover:bg-slate-50 rounded-2xl text-sm font-medium">
+            <i class="fa-solid fa-sync"></i>
+          </button>
+        `;
+      }
+    }
+
+    function renderTimeline(intent) {
+      const container = document.getElementById('timeline');
+      container.innerHTML = '';
+
+      const events = [
+        { key: 'created_at', label: 'Created', icon: 'fa-file', always: true },
+        { key: 'initiated_at', label: 'Initiated', icon: 'fa-play' },
+        { key: 'pending_at', label: 'PENDING (processing started)', icon: 'fa-clock', highlight: true },
+        { key: 'authorized_at', label: 'Authorized by provider', icon: 'fa-shield-halved' },
+        { key: 'captured_at', label: 'Captured', icon: 'fa-handshake' },
+        { key: 'settled_at', label: 'SETTLED (final success)', icon: 'fa-check-double', highlight: true },
+        { key: 'completed_at', label: 'COMPLETED', icon: 'fa-flag-checkered', highlight: true },
+        { key: 'success_at', label: 'SUCCESS timestamp recorded', icon: 'fa-trophy', highlight: true },
+        { key: 'declined_at', label: 'DECLINED', icon: 'fa-ban', isFailure: true },
+      ];
+
+      let hasAny = false;
+
+      events.forEach(ev => {
+        const ts = intent[ev.key];
+        if (!ts && !ev.always) return;
+        
+        hasAny = true;
+
+        const row = document.createElement('div');
+        row.className = `timeline-item flex items-start gap-3 px-1 py-1.5 ${ev.highlight ? 'bg-emerald-50 -mx-2 px-3 rounded-2xl' : ''}`;
+
+        const timeHTML = ts 
+          ? `<div class="font-medium text-emerald-600 tabular-nums">${formatTimestamp(ts)}</div>` 
+          : `<div class="text-slate-400">—</div>`;
+
+        const labelClass = ev.highlight ? 'font-semibold text-emerald-700' : (ev.isFailure ? 'text-rose-600' : 'text-slate-700');
+        
+        row.innerHTML = `
+          <div class="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center">
+            <i class="fa-solid ${ev.icon} ${ts ? 'text-emerald-500' : 'text-slate-300'}"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-center">
+              <div class="${labelClass} text-sm">${ev.label}</div>
+              ${timeHTML}
+            </div>
+            ${ev.highlight && ts ? 
+              `<div class="text-[10px] text-emerald-600/70">This is the exact moment the system recorded "${ev.label}"</div>` : ''}
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      if (!hasAny) {
+        container.innerHTML = `<div class="text-xs text-slate-400 px-1">No timestamps recorded yet</div>`;
+      }
+    }
+
+    async function loadRecentPayments() {
+      const tbody = document.getElementById('recent-table');
+      const empty = document.getElementById('recent-empty');
+      
+      try {
+        const list = await api('/v1/payment-intents?limit=12');
+        
+        tbody.innerHTML = '';
+        
+        if (!list || list.length === 0) {
+          empty.classList.remove('hidden');
+          return;
+        }
+        empty.classList.add('hidden');
+
+        list.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50 cursor-pointer';
+          tr.onclick = () => {
+            currentIntent = item;
+            renderDetail(item);
+            // scroll detail into view on mobile
+            document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+          };
+
+          const pending = item.pending_at ? formatTimestamp(item.pending_at) : '—';
+          const success = item.success_at || item.completed_at ? formatTimestamp(item.success_at || item.completed_at) : '—';
+
+          const provBadge = item.active_provider === 'paystack' 
+            ? `<span class="ml-1 text-[10px] px-1.5 py-px bg-emerald-100 text-emerald-700 rounded">paystack</span>` 
+            : `<span class="ml-1 text-[10px] px-1.5 py-px bg-slate-200 text-slate-600 rounded">mock</span>`;
+
+          tr.innerHTML = `
+            <td class="px-6 py-3 font-mono text-xs text-slate-500">${item.id.slice(0, 13)}…</td>
+            <td class="px-4 py-3 font-semibold tabular-nums">${formatAmount(item.amount, item.currency)}</td>
+            <td class="px-4 py-3">
+              <span class="state-badge text-xs ${getStateColor(item.state)}">
+                ${getStateIcon(item.state)} ${item.state}
+              </span>
+              ${provBadge}
+            </td>
+            <td class="px-4 py-3 text-xs text-slate-500 hidden md:table-cell">${pending}</td>
+            <td class="px-4 py-3 text-xs text-emerald-600 hidden md:table-cell font-medium">${success}</td>
+            <td class="px-6 py-3 text-right">
+              <div class="flex justify-end gap-1.5">
+                <button onclick="event.stopImmediatePropagation(); loadAndSelect('${item.id}')" 
+                        class="text-xs px-3 py-1 rounded-xl border border-slate-200 hover:bg-white">View</button>
+                ${!['SETTLED','DECLINED','VOIDED','EXPIRED'].includes(item.state) ? 
+                  `<button onclick="event.stopImmediatePropagation(); quickProcess('${item.id}')" 
+                           class="text-xs px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Process</button>` : ''}
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadAndSelect(id) {
+      try {
+        const intent = await api(`/v1/payment-intents/${id}`);
+        currentIntent = intent;
+        renderDetail(intent);
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function quickProcess(id) {
+      try {
+        // Fetch latest to know the provider
+        const intent = await api(`/v1/payment-intents/${id}`);
+        
+        if (intent.active_provider === 'paystack') {
+          // For paystack we initialize (gives link). Full success still needs verify after checkout.
+          const res = await api(`/v1/payment-intents/${id}/initialize-paystack`, { method: 'POST' });
+          const updated = res.intent || res;
+          if (currentIntent && currentIntent.id === id) {
+            currentIntent = updated;
+            renderDetail(updated);
+          }
+          await loadRecentPayments();
+          showToast('Paystack initialized — open the checkout link to complete test payment, then Verify.', 'emerald');
+        } else {
+          // Mock provider - instant full happy path
+          const res = await api(`/v1/payment-intents/${id}/process`, { method: 'POST' });
+          const updated = res.intent || res;
+          if (currentIntent && currentIntent.id === id) {
+            currentIntent = updated;
+            renderDetail(updated);
+          }
+          await loadRecentPayments();
+          showToast('Processed to success (mock)!', 'emerald');
+        }
+      } catch (e) {
+        alert('Quick process failed: ' + e.message);
+      }
+    }
+
+    // Special demo: shows idempotency in action for non-technical people
+    async function runIdempotencyDemo() {
+      const logContainer = document.getElementById('idempotency-log');
+      logContainer.classList.remove('hidden');
+      logContainer.innerHTML = `
+        <div class="font-semibold text-violet-700 mb-2">Running idempotency demo...</div>
+        <div class="space-y-1 text-xs" id="demo-log-lines"></div>
+      `;
+      const lines = document.getElementById('demo-log-lines');
+
+      function addLine(text, color = 'text-slate-600') {
+        const div = document.createElement('div');
+        div.className = `log-line ${color}`;
+        div.textContent = text;
+        lines.appendChild(div);
+      }
+
+      try {
+        const demoKey = 'idempotency-demo-' + Date.now();
+
+        addLine('1. Creating first payment with key: ' + demoKey, 'text-slate-500');
+
+        const first = await api('/v1/payment-intents', {
+          method: 'POST',
+          headers: { 'Idempotency-Key': demoKey },
+          body: JSON.stringify({ amount: 1999, currency: 'USD', description: 'Idempotency Test Payment', provider: 'mock' })
+        });
+
+        addLine('   → Created. ID = ' + first.id + ' | pending_at = ' + (first.pending_at || 'n/a'), 'text-emerald-600');
+
+        addLine('2. Sending EXACT same request + same key again...', 'text-slate-500');
+
+        const second = await api('/v1/payment-intents', {
+          method: 'POST',
+          headers: { 'Idempotency-Key': demoKey },
+          body: JSON.stringify({ amount: 1999, currency: 'USD', description: 'Idempotency Test Payment', provider: 'mock' })
+        });
+
+        const isSame = second.id === first.id;
+        const isReplay = second.is_replay === true;
+
+        addLine(`   → Response received. ID = ${second.id}`, isSame ? 'text-emerald-600' : 'text-red-600');
+        addLine(`   → is_replay flag: ${isReplay}`, isReplay ? 'text-emerald-600' : 'text-red-600');
+
+        if (isSame && isReplay) {
+          addLine('✅ SUCCESS! Same key returned the original payment. Nothing was created twice.', 'text-emerald-700 font-semibold');
+          addLine('   This is how HydraSwitch prevents accidental duplicate charges.', 'text-emerald-700');
+        } else {
+          addLine('Something went wrong — the two responses were different.', 'text-red-600');
+        }
+
+        // Show the payment in the main UI
+        currentIntent = second;
+        renderDetail(second);
+        await loadRecentPayments();
+
+      } catch (e) {
+        addLine('Error: ' + e.message, 'text-red-600');
+      }
+    }
+
+    async function resetDemoData() {
+      if (!confirm('Clear ALL demo payments and idempotency records?')) return;
+      
+      try {
+        await api('/dev/reset', { method: 'POST' });
+        currentIntent = null;
+        lastUsedKey = null;
+        
+        document.getElementById('detail-content').classList.add('hidden');
+        document.getElementById('detail-empty').classList.remove('hidden');
+        document.getElementById('recent-table').innerHTML = '';
+        document.getElementById('idempotency-log').classList.add('hidden');
+        
+        showToast('Demo data cleared.', 'slate');
+        await loadRecentPayments();
+      } catch (e) {
+        // If endpoint not present yet we still clear client state
+        currentIntent = null;
+        document.getElementById('detail-content').classList.add('hidden');
+        document.getElementById('detail-empty').classList.remove('hidden');
+        document.getElementById('recent-table').innerHTML = '';
+        alert('Reset done on client (server may need restart for full wipe)');
+      }
+    }
+
+    function showToast(message, color = 'emerald') {
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-4 right-4 px-5 py-3 rounded-2xl shadow-lg text-sm flex items-center gap-2 text-white bg-${color}-600`;
+      toast.innerHTML = `
+        <i class="fa-solid fa-info-circle"></i> 
+        <span>${message}</span>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.transition = 'all .25s ease';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 200);
+      }, 2800);
+    }
+
+    async function checkApiHealth() {
+      try {
+        await api('/health');
+        const el = document.getElementById('api-status');
+        el.innerHTML = `<i class="fa-solid fa-circle text-[9px]"></i> <span>Connected</span>`;
+        el.className = 'px-3 py-1 rounded-[14px] bg-emerald-500 text-white font-semibold flex items-center gap-1.5 text-xs';
+      } catch (e) {
+        const el = document.getElementById('api-status');
+        el.innerHTML = `<i class="fa-solid fa-circle text-[9px]"></i> <span>Offline</span>`;
+        el.className = 'px-3 py-1 rounded-[14px] bg-red-500 text-white font-semibold flex items-center gap-1.5 text-xs';
+      }
+    }
+
+    async function loadAndSelectFirst() {
+      try {
+        const list = await api('/v1/payment-intents?limit=1');
+        if (list && list.length > 0) {
+          currentIntent = list[0];
+          renderDetail(currentIntent);
+        }
+      } catch (e) {}
+    }
+
+    // Boot the UI
+    async function boot() {
+      initTailwind();
+
+      // Seed a nice default idempotency key
+      document.getElementById('idempotency-key').value = 'demo-' + Date.now().toString(36);
+
+      // Default to Paystack in the form
+      const provSel = document.getElementById('provider');
+      if (provSel) provSel.value = 'paystack';
+      onProviderChange();
+
+      await checkApiHealth();
+      await loadRecentPayments();
+      await loadAndSelectFirst();
+
+      // Keyboard support: press Enter in any input to create
+      ['amount', 'currency', 'description', 'idempotency-key'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') createPayment();
+          });
+        }
+      });
+
+      // Nice touch: generate a key if user focuses the key field and it's empty
+      const keyInput = document.getElementById('idempotency-key');
+      keyInput.addEventListener('focus', () => {
+        if (!keyInput.value.trim()) {
+          keyInput.value = 'demo-' + Date.now().toString(36);
+        }
+      });
+
+      // Initial toast hint
+      setTimeout(() => {
+        // Only if no payments exist yet
+        const tbody = document.getElementById('recent-table');
+        if (tbody.children.length === 0) {
+          // silent
+        }
+      }, 1200);
+
+      console.log('%c[HydraSwitch UI] Ready for non-technical testing', 'color:#64748b');
+    }
+
+    // Global helper for console tinkering
+    window.HydraSwitchUI = { createPayment, runIdempotencyDemo, loadRecentPayments };
+
+    window.onload = boot;
+  </script>
+</body>
+</html>

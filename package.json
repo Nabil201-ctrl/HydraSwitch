@@ -1,0 +1,38 @@
+{
+  "name": "hydraswitch",
+  "version": "1.0.0",
+  "description": "HydraSwitch is a high-availability Payment Orchestration Service designed to decouple business logic from specific payment processors (PSPs). It acts as an intelligent traffic controller that routes transactions to multiple providers (Stripe, Adyen, PayPal, etc.) based on cost, availability, and geographic performance.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "test": "echo \"No tests yet\" && exit 0",
+    "verify": "tsx src/verify.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nabil201-ctrl/HydraSwitch.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Nabil201-ctrl/HydraSwitch/issues"
+  },
+  "homepage": "https://github.com/Nabil201-ctrl/HydraSwitch#readme",
+  "dependencies": {
+    "@fastify/static": "^9.1.3",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.8.5",
+    "pino-pretty": "^13.1.3",
+    "uuid": "^14.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
